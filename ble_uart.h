@@ -31,36 +31,20 @@ class BleUart : public BLECharacteristicCallbacks, public BLEServerCallbacks, pu
     bool deviceConnected = false;
     bool oldDeviceConnected = false;
 
-    const char* SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
-    const char* CHARACTERISTIC_UUID_RX = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E";
-    const char* CHARACTERISTIC_UUID_TX = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E";
+    const char* SERVICE_UUID = "6E400001-C5A3-F393-E0A9-E50E24DCCA9E";
+    const char* CHARACTERISTIC_UUID_RX = "6E400002-C5A3-F393-E0A9-E50E24DCCA9E";
+    const char* CHARACTERISTIC_UUID_TX = "6E400003-C5A3-F393-E0A9-E50E24DCCA9E";
 
     uint8_t tx_counter=0;
     uint8_t buffer[100];
     SemaphoreHandle_t semaphore;
 
+    uint8_t recieved_value = 254; //off
+
     void onWrite(BLECharacteristic *pCharacteristic) override{
         std::string rxValue = pCharacteristic->getValue();
 
-        if (rxValue.length() ==rxValue[0]*2 + 3) {
-            Serial.println("*********");
-            Serial.print("Set: ");
-            Serial.println((int)rxValue[1]);
-            Serial.print("Interval: ");
-            Serial.println(rxValue[2]/2.0f);
-            for(int i=0;i<rxValue[0];i++){
-                Serial.print(i);
-                Serial.println(":");
-                Serial.print("  r: ");
-                Serial.print((int)rxValue[3+ i*2]);
-                Serial.print(" , theta: ");  
-                Serial.println(rxValue[3+ i*2+1]/256.0f*360-180);
-            }
-            Serial.println("*********");
-        }
-        else{
-          Serial.println("miss");
-        }
+        recieved_value = rxValue[0];
     }
 
     void onConnect(BLEServer* pServer) override{
@@ -77,7 +61,7 @@ public:
     }
     void Init(){
         // Create the BLE Device
-        BLEDevice::init("molten shooting");
+        BLEDevice::init("LTC");
 
         // Create the BLE Server
         pServer = BLEDevice::createServer();
@@ -97,7 +81,10 @@ public:
 
         // Start advertising
         pServer->getAdvertising()->start();
+    }
 
+    uint8_t GetRecievedValue(){
+        return recieved_value;
     }
 
     size_t write(uint8_t value) override{
